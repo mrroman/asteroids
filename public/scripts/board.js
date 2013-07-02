@@ -13,8 +13,9 @@ var Board = (function() {
 			ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
 			this.sprites.forEach(function(sprite) { 
 				ctx.save();
-				sprite.draw(ctx);
-				sprite.update(that);
+				sprite.draw && sprite.draw(ctx);
+				sprite.update && sprite.update(that);
+				sprite.collision && that.sprites.forEach(function(otherSprite) { sprite.collision(that, otherSprite) });
 				ctx.restore();
 			});
 		},
