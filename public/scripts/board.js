@@ -12,10 +12,14 @@ var Board = (function() {
 			
 			ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
 			this.sprites.forEach(function(sprite) { 
+				if (!sprite) return;
+				
 				ctx.save();
 				sprite.draw && sprite.draw(ctx);
 				sprite.update && sprite.update(that);
-				sprite.collision && that.sprites.forEach(function(otherSprite) { sprite.collision(that, otherSprite) });
+				sprite.collision && that.sprites.forEach(function(otherSprite) { 
+					sprite.collision(that, otherSprite);
+				});
 				ctx.restore();
 			});
 		},
@@ -24,6 +28,9 @@ var Board = (function() {
 		},
 		removeSprite: function(sprite) {
 			this.sprites = this.sprites.filter(function(val) { return val != sprite; }); 
+		},
+		clear: function() {
+			this.sprites = [];
 		}
 	};
 	
@@ -63,4 +70,22 @@ var SpriteUtils = (function() {
 			return sprite;			
 		}
 	}
+})();
+
+var Vector = (function() {
+	function constructor(x,y) {
+		this.x = x;
+		this.y = y;
+	}
+	
+	return {
+		add: function(v) {
+			return new Vector(this.x + v.x, this.y + v.y);
+		},
+		distance: function(v) {
+			var n1 = this.x - v.x
+				 ,n2 = this.y - v.y;
+			return Math.sqrt(n1*n1+n2*n2);
+		}
+	};
 })();

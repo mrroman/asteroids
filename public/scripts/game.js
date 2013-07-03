@@ -22,6 +22,22 @@ var ship = SpriteUtils.translated(SpriteUtils.rotating({
 			this.position.x += x;
 			this.position.y += y;
 		}
+		
+		if (this.position.x < 0) {
+			this.position.x = board.canvas.width;
+		}
+		
+		if (this.position.x > board.canvas.width) {
+			this.position.x = 0;
+		}
+		
+		if (this.position.y < 0) {
+			this.position.y = board.canvas.height;
+		}
+		
+		if (this.position.y > board.canvas.height) {
+			this.position.y = 0;
+		}
 	},
 	center: function(board) {
 		this.position = {
@@ -31,27 +47,30 @@ var ship = SpriteUtils.translated(SpriteUtils.rotating({
 	},
 	shoot: function(board) {
 		board.addSprite(new Bullet(this));
-	}
+	},
 }));
 
 var Bullet = (function() {
 	function constructor(ship) {
-		SpriteUtils.translated(SpriteUtils.rotating(this));
+		SpriteUtils.translated(this);
 		
 		this.distance = 30;
-		this.angle = ship.angle;
-		this.position = { x: ship.position.x, y: ship.position.y };
+		this.moveVector = { x: Math.cos(ship.angle + Math.PI/2), y: Math.sin(ship.angle + Math.PI/2) };
+		this.position = { x: ship.position.x + this.distance*this.moveVector.x, y: ship.position.y + this.distance*this.moveVector.y };
 	};
 	
 	constructor.prototype = {
 		draw: function(ctx) {
 			ctx.strokeStyle="#FF0000";
 			ctx.beginPath();
-			ctx.arc(0,this.distance,3,0,2*Math.PI);
+			ctx.arc(0,0,3,0,2*Math.PI);
 			ctx.stroke();
 		},
 		update: function(board) {
 			this.distance += 5;
+			this.position.x += 5*this.moveVector.x;
+			this.position.y += 5*this.moveVector.y;
+			
 			if (this.distance > 200) {
 				board.removeSprite(this);
 			}
@@ -67,9 +86,9 @@ var Bullet = (function() {
 var Stone = (function() {
 	function constructor() {
 		SpriteUtils.translated(this);
-		
-		this.size = 30;
-		var angle = Math.random()*2*Math.PI
+
+		this.size = 30;		
+		var angle = Math.random()*2*Math.PI;
 		this.moveVector = { x: Math.cos(angle), y: Math.sin(angle)};
 	};
 	
@@ -82,25 +101,47 @@ var Stone = (function() {
 		},
 		update: function (board) {
 			this.position.x += this.moveVector.x;
-			this.position.y += this.moveVector.y; 
+			this.position.y -= this.moveVector.y; 
+			
+			if (this.position.x < 0) {
+				this.position.x = board.canvas.width;
+			}
+			
+			if (this.position.x > board.canvas.width) {
+				this.position.x = 0;
+			}
+			
+			if (this.position.y < 0) {
+				this.position.y = board.canvas.height;
+			}
+			
+			if (this.position.y > board.canvas.height) {
+				this.position.y = 0;
+			}
+		},
+		collision: function (board, otherSprite) {
+			otherSprite.collisionStone && otherSprite.collisionStone(board, this);
+		},
+		collisionBullet: function (board, bullet) {
+			var distance = Math.sqrt(Math.pow(this.position.x - bullet.position.x, 2) + Math.pow(this.position.y - bullet.position.y, 2));
+			
+			if (distance < this.size + 3) {
+				board.removeSprite(this);
+				board.removeSprite(bullet);
+				
+				if (this.size > 5) {			
+					var stone1 = new Stone();
+					var stone2 = new Stone();
+					stone1.position = { x: this.position.x, y: this.position.y };
+					stone2.position = { x: this.position.x, y: this.position.y };
+					stone1.moveVector = { x: -this.moveVector.y, y: this.moveVector.x };
+					stone2.moveVector = { x: this.moveVector.y, y: -this.moveVector.x };
+					stone1.size = stone2.size = this.size / 2;
+					board.addSprite(stone1);
+					board.addSprite(stone2);
+				}
+			}
 		}
-		// collisionBullet: function (board, bullet) {
-		// 	var distance = Math.sqrt(Math.pow(this.position.x - bullet.position.x, 2) + Math.pow(this.position.y - bullet.position.y, 2));
-		// 	
-		// 	if (distance < this.size + 3) {
-		// 		board.removeSprite(this);
-		// 		board.removeSprite(bullet);
-		// 		
-		// 		var stone1 = new Stone();
-		// 		var stone2 = new Stone();
-		// 		stone1.position.x = this.position.x - this.size/2;
-		// 		stone1.position.y = this.position.y;
-		// 		stone2.position.x = this.position.x + this.size/2;
-		// 		stone2.position.y = this.position.y;
-		// 		stone1.angle = 
-		// 		
-		// 		board.addSprite()
-		// 	}
 	};
 	
 	return constructor;
