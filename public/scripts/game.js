@@ -1,75 +1,83 @@
-var ship = SpriteUtils.translated(SpriteUtils.rotating({
-	distanceSpeed: 0,
-	draw: function(ctx) {
-		ctx.strokeStyle="#00FF00";
-		ctx.beginPath();
-		ctx.moveTo(0,20);
-		ctx.lineTo(10,-10);
-		ctx.lineTo(0,0);
-		ctx.lineTo(-10,-10);
-		ctx.lineTo(0,20);
-		ctx.stroke();
-	},
-	update: function(board) {
-		if (this.angleDirection) {
-			this.angle += this.angleDirection;
-		}
+var ship = (function() {
+	var point1 = new Vector(0,20)
+		, point2 = new Vector(10,-10)
+		, point3 = new Vector(0,0)
+		, point4 = new Vector(-10,-10)
+		, point5 = new Vector(0,20);
 		
-		if (this.distanceSpeed) {
-			var x = Math.cos(this.angle + Math.PI/2)*this.distanceSpeed;
-			var y = Math.sin(this.angle + Math.PI/2)*this.distanceSpeed;
-			
-			this.position.x += x;
-			this.position.y += y;
-		}
+	return SpriteUtils.translated({
+		distanceSpeed: 0,
+		angle: 0,
+		moveVector: new Vector(0,1),
+		position: new Vector(0,0),
+		draw: function(ctx) {
+			ctx.strokeStyle="#00FF00";
+			ctx.beginPath();
+			ctx.moveToVec(point1.rotate(this.angle));
+			ctx.lineToVec(point2.rotate(this.angle));
+			ctx.lineToVec(point3.rotate(this.angle));
+			ctx.lineToVec(point4.rotate(this.angle));
+			ctx.lineToVec(point5.rotate(this.angle));
+			ctx.stroke();
+		},
+		update: function(board) {
+			if (this.angleDirection) {
+				this.angle += this.angleDirection;
+			} else {
+				this.moveVector = new Vector(0,1).rotate(this.angle);
+			}
 		
-		if (this.position.x < 0) {
-			this.position.x = board.canvas.width;
-		}
+			if (this.distanceSpeed) {
+				var k = this.moveVector.scale(this.distanceSpeed);
+				k.y = -k.y;
+				this.position = this.position.add(k);
+			}
 		
-		if (this.position.x > board.canvas.width) {
-			this.position.x = 0;
-		}
+			if (this.position.x < 0) {
+				this.position.x = board.canvas.width;
+			}
 		
-		if (this.position.y < 0) {
-			this.position.y = board.canvas.height;
-		}
+			if (this.position.x > board.canvas.width) {
+				this.position.x = 0;
+			}
 		
-		if (this.position.y > board.canvas.height) {
-			this.position.y = 0;
+			if (this.position.y < 0) {
+				this.position.y = board.canvas.height;
+			}
+		
+			if (this.position.y > board.canvas.height) {
+				this.position.y = 0;
+			}
+		},
+		center: function(board) {
+			this.position = new Vector(board.canvas.width/2-10, board.canvas.height/2-20);
+		},
+		shoot: function(board) {
+			board.addSprite(new Bullet(this));
 		}
-	},
-	center: function(board) {
-		this.position = {
-			x: board.canvas.width/2-10,
-			y: board.canvas.height/2-20
-		};
-	},
-	shoot: function(board) {
-		board.addSprite(new Bullet(this));
-	},
-}));
+	});
+})();
 
 var Bullet = (function() {
 	function constructor(ship) {
 		SpriteUtils.translated(this);
 		
+		this.bulletPos = new Vector(0,30).rotate(ship.angle);
 		this.distance = 30;
-		this.moveVector = { x: Math.cos(ship.angle + Math.PI/2), y: Math.sin(ship.angle + Math.PI/2) };
-		this.position = { x: ship.position.x + this.distance*this.moveVector.x, y: ship.position.y + this.distance*this.moveVector.y };
+		this.moveVector = new Vector(0,-1).rotate(-ship.angle).scale(5);
+		this.position = new Vector(ship.position.x, ship.position.y);
 	};
 	
 	constructor.prototype = {
 		draw: function(ctx) {
 			ctx.strokeStyle="#FF0000";
 			ctx.beginPath();
-			ctx.arc(0,0,3,0,2*Math.PI);
+			ctx.arc(this.bulletPos.x,-this.bulletPos.y,3,0,2*Math.PI);
 			ctx.stroke();
 		},
 		update: function(board) {
 			this.distance += 5;
-			this.position.x += 5*this.moveVector.x;
-			this.position.y += 5*this.moveVector.y;
+			this.position = this.position.add(this.moveVector);
 			
 			if (this.distance > 200) {
 				board.removeSprite(this);
@@ -154,7 +162,7 @@ function GameController($scope) {
 	stone.position = {x:100, y:100};
 	board.addSprite(stone);
 	ship.center(board);
-
+	
 	document.addEventListener('keydown', function(e) {
 		switch(e.keyCode) {
 		case 37:

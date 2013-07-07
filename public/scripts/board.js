@@ -2,6 +2,14 @@ var Board = (function() {
 	function constructor(canvasId) {
 		this.canvas = document.getElementById(canvasId);
 		this.context = this.canvas.getContext('2d');
+
+		this.context.moveToVec = function(v) {
+			this.moveTo(v.x, -v.y);
+		};
+		this.context.lineToVec = function(v) {
+			this.lineTo(v.x, -v.y);
+		};
+
 		this.sprites = [];
 	}
 	
@@ -46,7 +54,7 @@ var SpriteUtils = (function() {
 				context.translate(this.position.x, this.position.y);
 				old_draw.apply(this, arguments);
 			};
-			sprite.position = { x:0, y:0};
+			sprite.position = new Vector(0, 0);
 			return sprite;
 		},
 		rotating: function(sprite) {
@@ -56,7 +64,7 @@ var SpriteUtils = (function() {
 				context.rotate(this.angle);
 				old_draw.apply(this, arguments);
 			};
-			sprite.angle = 0;
+			sprite.angle = sprite.angle || 0;
 			return sprite;			
 		},
 		scaled: function(sprite) {
@@ -66,19 +74,24 @@ var SpriteUtils = (function() {
 				context.scale(this.scale, this.scale);
 				old_draw.apply(this, arguments);
 			};
-			sprite.scale = 1.0;
+			sprite.scale = sprite.scale || 1.0;
 			return sprite;			
 		}
 	}
 })();
 
 var Vector = (function() {
-	function constructor(x,y) {
-		this.x = x;
-		this.y = y;
+	function constructor(x, y) {
+		if (y !== undefined) {
+			this.x = x;
+			this.y = y;
+		} else {
+			this.x = Math.cos(x);
+			this.y = Math.sin(x);
+		}
 	}
 	
-	return {
+	constructor.prototype = {
 		add: function(v) {
 			return new Vector(this.x + v.x, this.y + v.y);
 		},
@@ -86,6 +99,16 @@ var Vector = (function() {
 			var n1 = this.x - v.x
 				 ,n2 = this.y - v.y;
 			return Math.sqrt(n1*n1+n2*n2);
+		},
+		scale: function(a) {
+			return new Vector(a*this.x, a*this.y);
+		},
+		rotate: function(angle) {
+			return new Vector(
+				this.x*Math.cos(angle) + this.y*Math.sin(angle),
+				-this.x*Math.sin(angle) + this.y*Math.cos(angle));
 		}
 	};
+	
+	return constructor;
 })();
